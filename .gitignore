@@ -1,0 +1,17 @@
+*.pyc
+*.pyo
+db.sqlite3
+
+venv
+__pycache__
+staticfiles
+static
+env/
+*.log
+build/
+.env.dev
+
+# local files
+local_settings.py
+
+.DS_STORE
