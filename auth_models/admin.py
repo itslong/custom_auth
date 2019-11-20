@@ -3,20 +3,33 @@ from django.contrib import admin
 # from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.utils.safestring import mark_safe
 
 from auth_models.models import CustomUser
 
 
-class UserCreationForm(forms.ModelForm):
+class CustomUserCreationForm(forms.ModelForm):
   """
   Create new user form with a repeated password field and all required fields.
   """
-  password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
-  password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+  password1 = forms.CharField(
+    label='Password', 
+    widget=forms.PasswordInput,
+    help_text=mark_safe("Your password can't be too similar to your other personal information.<br>"
+              "Your password must contain at least 8 characters.<br>"
+              "Your password can't be a commonly used password.<br>"
+              "Your password can't be entirely numeric.<br>")
+    )
+
+  password2 = forms.CharField(
+    label='Password confirmation', 
+    widget=forms.PasswordInput, 
+    help_text="Enter the same password as before, for verification."
+  )
 
   class Meta:
     model = CustomUser
-    fields = ('email', 'first_name', 'last_name')
+    fields = ('email', 'username', 'first_name', 'last_name')
 
   def clean_pw2(self):
     password1 = self.cleaned_data.get('password1')
@@ -34,7 +47,7 @@ class UserCreationForm(forms.ModelForm):
     return user
 
 
-class UserChangeForm(forms.ModelForm):
+class CustomUserChangeForm(forms.ModelForm):
   """
   Form to update users but replaces the password field with admin's password hash display field.
   """
@@ -47,7 +60,7 @@ class UserChangeForm(forms.ModelForm):
 
   class Meta:
     model = CustomUser
-    fields = ('email', 'password', 'first_name', 'last_name', 'is_active', 'is_admin')
+    fields = ('email', 'username','password', 'first_name', 'last_name', 'is_active', 'is_admin')
 
   def clean_password(self):
     """
@@ -63,18 +76,19 @@ class CustomUserAdmin(BaseUserAdmin):
   Override and register the default admin
   """
 
-  # include forms to add and change user instances
-  update_user_form = UserChangeForm
-  create_user_form = UserCreationForm
+  # include forms to add and change user instances. 
+  #must use keyword vars: "form" and "add_form" to override properly.
+  form = CustomUserChangeForm
+  add_form = CustomUserCreationForm
 
   # provides fields to be used in displaying the Custom User model
   list_display = (
-    'email', 'last_name', 'first_name', 'created_at', 
+    'email', 'username','last_name', 'first_name', 'created_at', 
     'last_login', 'is_staff', 'is_admin', 'is_superuser'
   )
   list_filter = ('is_admin', 'last_name')
   fieldsets = (
-    (None, {'fields': ('email', 'password')}),
+    (None, {'fields': ('email', 'username', 'password')}),
     ('Personal info', {'fields': ('first_name', 'last_name')}),
     ('Permissions', {'fields': ('is_admin', 'is_superuser', 'user_permissions')}),
   )
@@ -84,7 +98,7 @@ class CustomUserAdmin(BaseUserAdmin):
   add_fieldsets = (
     (None, {
         'classes': ('wide', ),
-        'fields': ('email', 'first_name', 'last_name', 'password1', 'password2')
+        'fields': ('email', 'username', 'first_name', 'last_name', 'password1', 'password2')
       }
     ),
   )

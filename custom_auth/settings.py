@@ -79,6 +79,13 @@ WSGI_APPLICATION = 'custom_auth.wsgi.application'
 
 
 AUTH_USER_MODEL = 'auth_models.CustomUser'
+
+# Custom backend to authenticate with email or username
+AUTHENTICATION_BACKENDS = (
+  'django.contrib.auth.backends.ModelBackend',
+  'auth_models.custom_backends.EmailOrUsernameModelBackend'
+)
+
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
