@@ -1,14 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from uuid import uuid4
 
 
 class CustomUserManager(BaseUserManager):
-  def create_user(self, email, first_name=None, last_name=None, password=None):
+  def create_user(self, email, username=None, first_name=None, last_name=None, password=None):
     if not email:
       raise ValueError('You must enter a valid email.')
 
     user = self.model(
       email = self.normalize_email(email),
+      username = username,
       first_name = first_name,
       last_name = last_name
     )
@@ -17,9 +19,10 @@ class CustomUserManager(BaseUserManager):
     user.save(using=self._db)
     return user
 
-  def create_superuser(self, email, password, first_name=None, last_name=None):
+  def create_superuser(self, email, password, username=None, first_name=None, last_name=None):
     user = self.create_user(
       email = email,
+      username = username,
       first_name = first_name,
       last_name = last_name,
       password = password
@@ -37,6 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
   from PermissionsMixin: groups, user_permissions
   """
   email = models.EmailField(max_length=254, unique=True)
+  username = models.CharField(max_length=128, blank=True, null=True, unique=True)
   first_name = models.CharField(max_length=50, blank=True, null=True)
   last_name = models.CharField(max_length=50, blank=True, null=True)
   password = models.CharField(max_length=128, verbose_name='password')
@@ -62,6 +66,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     to='auth.Group',
     verbose_name='groups'
   )
+
+  class Meta:
+    unique_together = ('email', 'username', )
 
   user_permissions = models.ManyToManyField(
     blank=True,
@@ -91,3 +98,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
   def is_staff(self):
     "Is the user a member of staff?"
     return self.is_admin
+
+  # creates a user hashed string in place of a username if the username field is left blank
+  # def clean(self):
+  #   if getattr(self, 'username', None) is None:
+  #     self.username = 'user-' + str(uuid4())
